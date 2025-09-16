@@ -20,6 +20,13 @@ Fokus keahlian saya ada di Laravel. Tapi saya juga memiliki pengalaman di Flutte
 
 ---
 
+## 🛠 Tech Stack
+
+![Laravel](https://img.shields.io/badge/laravel-%23FF2D20.svg?style=for-the-badge&logo=laravel&logoColor=white) 
+![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white) ![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=Apache%20Airflow&logoColor=white)
+
+---
+
 ## 📬 Let’s Connect!
 
 - [GitHub](https://github.com/mfarrasmajid)  
