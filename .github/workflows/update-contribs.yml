@@ -29,79 +29,96 @@ jobs:
 
           FROM_DATE="$(date -u -d '1 year ago' +%Y-%m-%dT%H:%M:%SZ)"
           TO_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          PAGE_SIZE=100
+          N=200  # max repos per bucket; raise if you contribute to many repos
 
+          # GraphQL: collect repos from commits, PRs, issues, and created repos within window
           cat > query.graphql <<'GRAPHQL'
-          query($login:String!, $from:DateTime!, $to:DateTime!, $first:Int!, $after:String) {
+          query($login:String!, $from:DateTime!, $to:DateTime!, $n:Int!) {
             user(login:$login) {
+              login
               contributionsCollection(from:$from, to:$to) {
-                repositoriesContributedTo(
-                  first:$first,
-                  after:$after,
-                  includeUserRepositories:false,
-                  contributionTypes:[COMMIT, PULL_REQUEST, ISSUE, REPOSITORY]
-                ) {
-                  nodes { nameWithOwner url isPrivate }
-                  pageInfo { hasNextPage endCursor }
+                commitContributionsByRepository(maxRepositories: $n) {
+                  repository { nameWithOwner url isPrivate owner { login } }
+                }
+                pullRequestContributionsByRepository(maxRepositories: $n) {
+                  repository { nameWithOwner url isPrivate owner { login } }
+                }
+                issueContributionsByRepository(maxRepositories: $n) {
+                  repository { nameWithOwner url isPrivate owner { login } }
+                }
+                repositoryContributions(first: $n) {
+                  nodes {
+                    repository { nameWithOwner url isPrivate owner { login } }
+                  }
                 }
               }
             }
           }
           GRAPHQL
 
-          AFTER=null
-          : > contributed_repos_raw.json
-          while : ; do
-            RESP=$(jq -n \
-                --rawfile q query.graphql \
-                --arg login "$GH_LOGIN" \
-                --arg from "$FROM_DATE" \
-                --arg to "$TO_DATE" \
-                --argjson first "$PAGE_SIZE" \
-                --argjson after "$AFTER" \
-                '{query:$q, variables:{login:$login, from:$from, to:$to, first:$first, after:$after}}' \
-              | curl -sSf -H "Authorization: bearer $GH_TOKEN" \
-                      -H "Content-Type: application/json" \
-                      -X POST https://api.github.com/graphql \
-                      -d @-)
+          RESP=$(jq -n \
+              --rawfile q query.graphql \
+              --arg login "$GH_LOGIN" \
+              --arg from "$FROM_DATE" \
+              --arg to "$TO_DATE" \
+              --argjson n "$N" \
+              '{query:$q, variables:{login:$login, from:$from, to:$to, n:$n}}' \
+            | curl -sSf -H "Authorization: bearer $GH_TOKEN" \
+                    -H "Content-Type: application/json" \
+                    -X POST https://api.github.com/graphql \
+                    -d @-)
 
-            RESP_FILE=$(mktemp)
-            echo "$RESP" > "$RESP_FILE"
+          RESP_FILE=$(mktemp)
+          echo "$RESP" > "$RESP_FILE"
 
-            # Fail fast on GraphQL errors (prints details)
-            if jq -e '.errors? // [] | length > 0' "$RESP_FILE" >/dev/null; then
-              echo "GitHub GraphQL returned errors:" >&2
-              jq -r '.errors[] | "- \(.message)"' "$RESP_FILE" >&2
-              jq -r '.errors[0]' "$RESP_FILE" >&2
-              exit 1
-            fi
+          # Fail fast on GraphQL errors (shows details)
+          if jq -e '.errors? // [] | length > 0' "$RESP_FILE" > /dev/null; then
+            echo "GitHub GraphQL returned errors:" >&2
+            jq -r '.errors[] | "- \(.message)"' "$RESP_FILE" >&2
+            jq -r '.errors[0]' "$RESP_FILE" >&2
+            exit 1
+          fi
 
-            # Safely append nodes
-            jq -c '(.data.user.contributionsCollection.repositoriesContributedTo.nodes // [])[]' \
-              "$RESP_FILE" >> contributed_repos_raw.json
+          # Flatten all repositories from the four buckets
+          jq -c '
+            .data.user as $u
+            | ($u.contributionsCollection // {}) as $c
+            | [
+                ($c.commitContributionsByRepository // [])[]?.repository,
+                ($c.pullRequestContributionsByRepository // [])[]?.repository,
+                ($c.issueContributionsByRepository // [])[]?.repository,
+                ($c.repositoryContributions.nodes // [])[]?.repository
+              ]
+            | map(select(. != null))
+            ' "$RESP_FILE" > all_repos.json
 
-            HAS_NEXT=$(jq -r '.data.user.contributionsCollection.repositoriesContributedTo.pageInfo.hasNextPage // false' "$RESP_FILE")
-            if [ "$HAS_NEXT" != "true" ]; then
-              break
-            fi
-
-            AFTER=$(jq -r '.data.user.contributionsCollection.repositoriesContributedTo.pageInfo.endCursor // empty' "$RESP_FILE" | jq -R)
-            rm -f "$RESP_FILE"
-            sleep 0.3
-          done
-
+          # Configs
           INCLUDE_PRIVATE=${INCLUDE_PRIVATE:-false}
-          if [ "$INCLUDE_PRIVATE" = "true" ]; then JQ_FILTER='.'; else JQ_FILTER='select(.isPrivate|not)'; fi
-
-          jq -s "[ .[] | $JQ_FILTER | {nameWithOwner, url} ]
-                | unique_by(.nameWithOwner)
-                | sort_by(.nameWithOwner)" contributed_repos_raw.json > contributed_repos.json
-
           LIMIT=${LIMIT:-30}
-          jq -r ".[0:$LIMIT] | map(\"- 📄 [\(.nameWithOwner)](\(.url))\") | .[]" contributed_repos.json > contributed_repos.md
+          ME=$(jq -r '.data.user.login' "$RESP_FILE")
 
-          if [ ! -s contributed_repos.md ]; then
+          # Filter out own repos, optionally drop private, then unique & sort
+          if [ "$INCLUDE_PRIVATE" = "true" ]; then
+            PRIV_FILTER='.'
+          else
+            PRIV_FILTER='select(.isPrivate|not)'
+          fi
+
+          jq -s '
+            (.[0] // [])
+            | map('"$PRIV_FILTER"')
+            | map(select(.owner.login != "'"$ME"'"))      # exclude your own repos
+            | unique_by(.nameWithOwner)
+            | sort_by(.nameWithOwner)
+            | .[0:'"$LIMIT"']
+            | map({nameWithOwner, url})
+          ' all_repos.json > contributed_repos.json
+
+          # Render markdown with an icon
+          if [ "$(jq length contributed_repos.json)" -eq 0 ]; then
             echo "- No public contributions found in the last 12 months." > contributed_repos.md
+          else
+            jq -r 'map("- 📄 [\(.nameWithOwner)](\(.url))") | .[]' contributed_repos.json > contributed_repos.md
           fi
 
 
