@@ -22,6 +22,11 @@ jobs:
           # otherwise the default GITHUB_TOKEN is fine for public contributions.
           GH_TOKEN: ${{ secrets.CONTRIBS_TOKEN || github.token }}
         run: |
+          set -Eeuo pipefail
+
+          # Better error visibility
+          trap 'echo "::error file=${BASH_SOURCE[0]},line=${LINENO}::Command failed: $BASH_COMMAND"' ERR
+
           set -euo pipefail
 
           FROM_DATE="$(date -u -d '1 year ago' +%Y-%m-%dT%H:%M:%SZ)"
