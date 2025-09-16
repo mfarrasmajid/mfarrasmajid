@@ -22,13 +22,13 @@ jobs:
           # otherwise the default GITHUB_TOKEN is fine for public contributions.
           GH_TOKEN: ${{ secrets.CONTRIBS_TOKEN || github.token }}
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+
+          # Better error visibility
+          trap 'echo "::error file=${BASH_SOURCE[0]},line=${LINENO}::Command failed: $BASH_COMMAND"' ERR
 
           FROM_DATE="$(date -u -d '1 year ago' +%Y-%m-%dT%H:%M:%SZ)"
           TO_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-
-          # GraphQL: repositories you've contributed to (commits, PRs, issues, repo)
-          # Note: first: 100 per page; most users will fit — you can add pagination if needed.
           PAGE_SIZE=100
 
           read -r -d '' QUERY <<'GRAPHQL'
@@ -56,46 +56,65 @@ jobs:
           }
           GRAPHQL
 
+          # Start fresh
+          : > contributed_repos_raw.json
+
           AFTER=null
-          > contributed_repos_raw.json
           while : ; do
-            RESP=$(jq -n --arg q "$QUERY" \
+            # Build JSON body locally with jq (avoids quoting mistakes)
+            BODY=$(jq -n --arg q "$QUERY" \
                         --arg login "$GH_LOGIN" \
                         --arg from "$FROM_DATE" \
                         --arg to "$TO_DATE" \
                         --argjson first "$PAGE_SIZE" \
                         --argjson after "$AFTER" \
-                        '{query:$q, variables:{login:$login, from:$from, to:$to, first:$first, after:$after}}' \
-                  | curl -sSf -H "Authorization: bearer $GH_TOKEN" \
-                              -H "Content-Type: application/json" \
-                              -X POST https://api.github.com/graphql \
-                              -d @-)
+                        '{query:$q, variables:{login:$login, from:$from, to:$to, first:$first, after:$after}}')
 
-            # Append nodes
-            echo "$RESP" | jq '.data.user.contributionsCollection.repositoriesContributedTo.nodes[]' >> contributed_repos_raw.json
+            # Use --fail-with-body so non-2xx prints the error message
+            RESP=$(curl -sS --fail-with-body \
+                -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Content-Type: application/json" \
+                -X POST https://api.github.com/graphql \
+                -d "$BODY")
 
-            HAS_NEXT=$(echo "$RESP" | jq -r '.data.user.contributionsCollection.repositoriesContributedTo.pageInfo.hasNextPage')
+            # If GraphQL returned errors, show them and exit
+            if jq -e '.errors' >/dev/null 2>&1 <<<"$RESP"; then
+              echo "GraphQL errors:"
+              echo "$RESP" | jq '.errors'
+              exit 1
+            fi
+
+            # Append nodes (guarded; will no-op if path missing)
+            echo "$RESP" \
+              | jq -c '.data?.user?.contributionsCollection?.repositoriesContributedTo?.nodes[]?' \
+              >> contributed_repos_raw.json
+
+            HAS_NEXT=$(jq -r '.data?.user?.contributionsCollection?.repositoriesContributedTo?.pageInfo?.hasNextPage // false' <<<"$RESP")
             if [ "$HAS_NEXT" != "true" ]; then
               break
             fi
-            AFTER=$(echo "$RESP" | jq -r '.data.user.contributionsCollection.repositoriesContributedTo.pageInfo.endCursor' | jq -R)
+
+            # endCursor -> JSON string for --argjson (or null if absent)
+            AFTER=$(jq -r '.data?.user?.contributionsCollection?.repositoriesContributedTo?.pageInfo?.endCursor' <<<"$RESP")
+            if [ -z "$AFTER" ] || [ "$AFTER" = "null" ]; then
+              AFTER=null
+            else
+              AFTER=$(jq -n --arg c "$AFTER" '$c')  # produces a JSON string
+            fi
           done
 
-          # Build Markdown list (public by default; include private if you want)
-          # Set INCLUDE_PRIVATE=true to show private repos (only if your token can see them).
           INCLUDE_PRIVATE=${INCLUDE_PRIVATE:-false}
-
           if [ "$INCLUDE_PRIVATE" = "true" ]; then
             JQ_FILTER='.'
           else
             JQ_FILTER='select(.isPrivate|not)'
-          fi
+          end
 
-          jq -s "[ .[] | $JQ_FILTER | {nameWithOwner, url} ] 
-                 | unique_by(.nameWithOwner)
-                 | sort_by(.nameWithOwner)" contributed_repos_raw.json > contributed_repos.json
+          # Build the final list
+          jq -s "[ .[] | $JQ_FILTER | {nameWithOwner, url} ]
+                | unique_by(.nameWithOwner)
+                | sort_by(.nameWithOwner)" contributed_repos_raw.json > contributed_repos.json
 
-          # Limit the list if you want (e.g., top 30)
           LIMIT=${LIMIT:-30}
           jq -r ".[0:$LIMIT] | map(\"- [\(.nameWithOwner)](\(.url))\") | .[]" contributed_repos.json > contributed_repos.md
 
@@ -103,6 +122,7 @@ jobs:
           if [ ! -s contributed_repos.md ]; then
             echo "- No public contributions found in the last 12 months." > contributed_repos.md
           fi
+
 
       - name: Update README between markers
         run: |
