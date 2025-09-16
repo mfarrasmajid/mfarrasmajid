@@ -17,7 +17,7 @@ jobs:
 
       - name: Build contributed repos list (last 12 months)
         env:
-          GH_LOGIN: ${{ github.repository_owner }}
+          GH_LOGIN: ${{ github.actor }}
           # Use CONTRIBS_TOKEN if you want to include private repos (see notes below),
           # otherwise the default GITHUB_TOKEN is fine for public contributions.
           GH_TOKEN: ${{ secrets.CONTRIBS_TOKEN || github.token }}
@@ -26,8 +26,6 @@ jobs:
 
           # Better error visibility
           trap 'echo "::error file=${BASH_SOURCE[0]},line=${LINENO}::Command failed: $BASH_COMMAND"' ERR
-
-          set -euo pipefail
 
           FROM_DATE="$(date -u -d '1 year ago' +%Y-%m-%dT%H:%M:%SZ)"
           TO_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -52,7 +50,7 @@ jobs:
           GRAPHQL
 
           AFTER=null
-          > contributed_repos_raw.json
+          : > contributed_repos_raw.json
           while : ; do
             RESP=$(jq -n \
                 --rawfile q query.graphql \
@@ -67,10 +65,29 @@ jobs:
                       -X POST https://api.github.com/graphql \
                       -d @-)
 
-            echo "$RESP" | jq '.data.user.contributionsCollection.repositoriesContributedTo.nodes[]' >> contributed_repos_raw.json
-            HAS_NEXT=$(echo "$RESP" | jq -r '.data.user.contributionsCollection.repositoriesContributedTo.pageInfo.hasNextPage')
-            if [ "$HAS_NEXT" != "true" ]; then break; fi
-            AFTER=$(echo "$RESP" | jq -r '.data.user.contributionsCollection.repositoriesContributedTo.pageInfo.endCursor' | jq -R)
+            RESP_FILE=$(mktemp)
+            echo "$RESP" > "$RESP_FILE"
+
+            # Fail fast on GraphQL errors (prints details)
+            if jq -e '.errors? // [] | length > 0' "$RESP_FILE" >/dev/null; then
+              echo "GitHub GraphQL returned errors:" >&2
+              jq -r '.errors[] | "- \(.message)"' "$RESP_FILE" >&2
+              jq -r '.errors[0]' "$RESP_FILE" >&2
+              exit 1
+            fi
+
+            # Safely append nodes
+            jq -c '(.data.user.contributionsCollection.repositoriesContributedTo.nodes // [])[]' \
+              "$RESP_FILE" >> contributed_repos_raw.json
+
+            HAS_NEXT=$(jq -r '.data.user.contributionsCollection.repositoriesContributedTo.pageInfo.hasNextPage // false' "$RESP_FILE")
+            if [ "$HAS_NEXT" != "true" ]; then
+              break
+            fi
+
+            AFTER=$(jq -r '.data.user.contributionsCollection.repositoriesContributedTo.pageInfo.endCursor // empty' "$RESP_FILE" | jq -R)
+            rm -f "$RESP_FILE"
+            sleep 0.3
           done
 
           INCLUDE_PRIVATE=${INCLUDE_PRIVATE:-false}
@@ -81,7 +98,6 @@ jobs:
                 | sort_by(.nameWithOwner)" contributed_repos_raw.json > contributed_repos.json
 
           LIMIT=${LIMIT:-30}
-          # prepend a document icon to each line
           jq -r ".[0:$LIMIT] | map(\"- 📄 [\(.nameWithOwner)](\(.url))\") | .[]" contributed_repos.json > contributed_repos.md
 
           if [ ! -s contributed_repos.md ]; then
