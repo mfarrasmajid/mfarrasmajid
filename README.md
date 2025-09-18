@@ -14,7 +14,7 @@ Fokus keahlian saya ada di Laravel. Tapi saya juga memiliki pengalaman di Flutte
 
 ## 📊 GitHub Stats
 
-![Farras Majid’s GitHub stats](https://github-readme-stats.vercel.app/api?username=mfarrasmajid&show_icons=true&count_private=true&theme=radical)
+![Farras Majid’s GitHub stats](https://github-readme-stats.vercel.app/api?username=mfarrasmajid&show_icons=true&theme=radical)
 
 ![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=mfarrasmajid&layout=compact&theme=radical)
 
