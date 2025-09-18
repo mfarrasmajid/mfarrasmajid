@@ -1,6 +1,22 @@
 [
   {
+    "nameWithOwner": "OpenSource-Communities/guestbook",
+    "url": "https://github.com/OpenSource-Communities/guestbook"
+  },
+  {
+    "nameWithOwner": "alexeymezenin/laravel-best-practices",
+    "url": "https://github.com/alexeymezenin/laravel-best-practices"
+  },
+  {
     "nameWithOwner": "creonizer93/dmt-maintenance",
     "url": "https://github.com/creonizer93/dmt-maintenance"
+  },
+  {
+    "nameWithOwner": "firstcontributions/first-contributions",
+    "url": "https://github.com/firstcontributions/first-contributions"
+  },
+  {
+    "nameWithOwner": "rappasoft/laravel-boilerplate",
+    "url": "https://github.com/rappasoft/laravel-boilerplate"
   }
 ]

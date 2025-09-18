@@ -1,1 +1,5 @@
+- 📄 [OpenSource-Communities/guestbook](https://github.com/OpenSource-Communities/guestbook)
+- 📄 [alexeymezenin/laravel-best-practices](https://github.com/alexeymezenin/laravel-best-practices)
 - 📄 [creonizer93/dmt-maintenance](https://github.com/creonizer93/dmt-maintenance)
+- 📄 [firstcontributions/first-contributions](https://github.com/firstcontributions/first-contributions)
+- 📄 [rappasoft/laravel-boilerplate](https://github.com/rappasoft/laravel-boilerplate)
