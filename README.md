@@ -6,13 +6,13 @@
 
 ---
 
-## ✨ About Me
+## ✨ Tentang Saya
 Hi! Salam kenal saya **M Farras Majid**, seorang developer yang senang bereksplorasi dunia perkodingan seperti Web Application, Mobile Application, Data Warehouse, Data Analytics, dan Secure SDLC (DevSecOps). Bahkan saya juga tertarik di dunia desain seperti UI/UX Web Application Design, Mobile Application Design, dan Logo Design.  
 Fokus keahlian saya ada di Laravel. Tapi saya juga memiliki pengalaman di Flutter, Apache AirFlow, ClickHouse, Javascript, dan lainnya🚦.
 
 ---
 
-## 📊 GitHub Stats
+## 📊 Status GitHub
 
 ![Farras Majid’s GitHub stats](https://github-readme-stats-chi-kohl-52.vercel.app/api?username=mfarrasmajid&show_icons=true&theme=radical)
 
@@ -44,7 +44,7 @@ Fokus keahlian saya ada di Laravel. Tapi saya juga memiliki pengalaman di Flutte
 
 ---
 
-## 📬 Let’s Connect!
+## 📬 Mari Terhubung!
 
 - [GitHub](https://github.com/mfarrasmajid)  
 - [LinkedIn](https://www.linkedin.com/in/m-farras-majid-79804060/)
@@ -52,7 +52,7 @@ Fokus keahlian saya ada di Laravel. Tapi saya juga memiliki pengalaman di Flutte
 
 ---
 
-## 📄 Repos I Contributed To
+## 📄 Kontribusi Repo
 
 <!-- CONTRIBUTED_REPOS:START -->
 
