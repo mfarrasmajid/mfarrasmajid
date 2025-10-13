@@ -62,6 +62,7 @@ Fokus keahlian saya ada di Laravel. Tapi saya juga memiliki pengalaman di Flutte
 - 📄 [flatpickr/flatpickr](https://github.com/flatpickr/flatpickr)
 - 📄 [prabogo/prabogo](https://github.com/prabogo/prabogo)
 - 📄 [rappasoft/laravel-boilerplate](https://github.com/rappasoft/laravel-boilerplate)
+- 📄 [unicodeveloper/laravel-paystack](https://github.com/unicodeveloper/laravel-paystack)
 <!-- CONTRIBUTED_REPOS:END -->
 
 ---

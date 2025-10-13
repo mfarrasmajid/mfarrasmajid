@@ -22,5 +22,9 @@
   {
     "nameWithOwner": "rappasoft/laravel-boilerplate",
     "url": "https://github.com/rappasoft/laravel-boilerplate"
+  },
+  {
+    "nameWithOwner": "unicodeveloper/laravel-paystack",
+    "url": "https://github.com/unicodeveloper/laravel-paystack"
   }
 ]

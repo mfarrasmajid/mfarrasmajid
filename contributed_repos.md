@@ -4,3 +4,4 @@
 - 📄 [flatpickr/flatpickr](https://github.com/flatpickr/flatpickr)
 - 📄 [prabogo/prabogo](https://github.com/prabogo/prabogo)
 - 📄 [rappasoft/laravel-boilerplate](https://github.com/rappasoft/laravel-boilerplate)
+- 📄 [unicodeveloper/laravel-paystack](https://github.com/unicodeveloper/laravel-paystack)
