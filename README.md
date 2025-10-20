@@ -56,10 +56,13 @@ Fokus keahlian saya ada di Laravel. Tapi saya juga memiliki pengalaman di Flutte
 
 <!-- CONTRIBUTED_REPOS:START -->
 
+- 📄 [AliceWonderland/hacktoberfest](https://github.com/AliceWonderland/hacktoberfest)
 - 📄 [OpenSource-Communities/guestbook](https://github.com/OpenSource-Communities/guestbook)
 - 📄 [alexeymezenin/laravel-best-practices](https://github.com/alexeymezenin/laravel-best-practices)
 - 📄 [firstcontributions/first-contributions](https://github.com/firstcontributions/first-contributions)
 - 📄 [flatpickr/flatpickr](https://github.com/flatpickr/flatpickr)
+- 📄 [karpathy/nanochat](https://github.com/karpathy/nanochat)
+- 📄 [mfts/papermark](https://github.com/mfts/papermark)
 - 📄 [prabogo/prabogo](https://github.com/prabogo/prabogo)
 - 📄 [rappasoft/laravel-boilerplate](https://github.com/rappasoft/laravel-boilerplate)
 - 📄 [unicodeveloper/laravel-paystack](https://github.com/unicodeveloper/laravel-paystack)

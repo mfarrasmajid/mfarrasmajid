@@ -1,5 +1,9 @@
 [
   {
+    "nameWithOwner": "AliceWonderland/hacktoberfest",
+    "url": "https://github.com/AliceWonderland/hacktoberfest"
+  },
+  {
     "nameWithOwner": "OpenSource-Communities/guestbook",
     "url": "https://github.com/OpenSource-Communities/guestbook"
   },
@@ -14,6 +18,14 @@
   {
     "nameWithOwner": "flatpickr/flatpickr",
     "url": "https://github.com/flatpickr/flatpickr"
+  },
+  {
+    "nameWithOwner": "karpathy/nanochat",
+    "url": "https://github.com/karpathy/nanochat"
+  },
+  {
+    "nameWithOwner": "mfts/papermark",
+    "url": "https://github.com/mfts/papermark"
   },
   {
     "nameWithOwner": "prabogo/prabogo",
